@@ -147,7 +147,7 @@ def main(username, password):
           datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     print("🚌 打卡任务启动")
 
-    dk = DaKa(username, password)
+    dk = ClockIn(username, password)
 
     print("登录到浙大统一身份认证平台...")
     try:
@@ -165,16 +165,26 @@ def main(username, password):
         print('获取信息失败，请手动打卡，更多信息: ' + str(err))
         raise Exception
 
-    print('正在为您打卡打卡打卡')
+    print('正在为您打卡')
     try:
         res = dk.post()
         if str(res['e']) == '0':
             print('已为您打卡成功！')
         else:
             print(res['m'])
-    except Exception:
-        print('数据提交失败')
-        raise Exception
+            if res['m'].find("已经") != -1: # 已经填报过了 不报错
+                pass
+            else:
+                count = 0
+                while (str(res['e']) != '0' and count < 3):
+                    time.sleep(5)
+                    dk.get_info()
+                    res = dk.post()
+                    count +=1
+                if str(res['e']) == '0':
+                    print('已为您打卡成功！')
+                else:
+                    raise Exception
 
 
 if __name__ == "__main__":
